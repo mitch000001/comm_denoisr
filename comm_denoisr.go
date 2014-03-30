@@ -2,6 +2,8 @@ package main
 
 import (
 	"code.google.com/p/go.crypto/openpgp"
+	"code.google.com/p/go.crypto/openpgp/armor"
+	"code.google.com/p/go.crypto/openpgp/errors"
 	"fmt"
 	"log"
 	"os"
@@ -40,6 +42,10 @@ func main() {
 		}
 	}
 	fmt.Println(myPrivateKey)
+	decryptionKeys := privring.DecryptionKeys()
+	for _, key := range decryptionKeys {
+		fmt.Printf("Found decryption key with id %X\n", key.PublicKey.KeyId)
+	}
 
 	args := os.Args[1:]
 	if len(args) > 0 {
@@ -47,7 +53,15 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		md, err := openpgp.ReadMessage(file, privring, nil, nil)
+		pgpBlock, err := armor.Decode(file)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println(pgpBlock.Type)
+		if alreadyPromptedKeys != nil {
+			alreadyPromptedKeys = nil
+		}
+		md, err := openpgp.ReadMessage(pgpBlock.Body, privring, openpgp.PromptFunction(promptForPassword), nil)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -65,4 +79,25 @@ func getKeyByEmail(keyring openpgp.EntityList, email string) *openpgp.Entity {
 	}
 
 	return nil
+}
+
+var alreadyPromptedKeys map[[20]byte]struct{}
+
+func promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
+	if alreadyPromptedKeys == nil {
+		alreadyPromptedKeys = make(map[[20]byte]struct{})
+	}
+	fmt.Printf("Keys: %v (%v)\n", len(keys)-len(alreadyPromptedKeys), keys)
+	for _, key := range keys {
+		if _, ok := alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
+			fmt.Printf("Please insert password for key with id '%X'\n", key.PublicKey.KeyId)
+			fmt.Scan(&password)
+			fmt.Printf("Password: %v", string(password))
+			alreadyPromptedKeys[key.PublicKey.Fingerprint] = struct{}{}
+			return password, nil
+		} else {
+			continue
+		}
+	}
+	return nil, errors.ErrKeyIncorrect
 }
