@@ -1,71 +1,89 @@
 package main
 
 import (
+	. "./app"
 	"code.google.com/p/go.crypto/openpgp"
-	"code.google.com/p/go.crypto/openpgp/armor"
-	"code.google.com/p/go.crypto/openpgp/errors"
 	"fmt"
+	"github.com/codegangsta/cli"
 	"log"
 	"os"
 )
 
+var app *cli.App
+var denoisr *Denoisr
+
+func init() {
+	app = cli.NewApp()
+	app.Name = "comm_denoisr"
+	app.Usage = "Denoise your communication"
+	app.Version = "0.0.1"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{Name: "input, i", Usage: "Set filename here"},
+	}
+	decryptCommand := cli.Command{
+		Name:        "decrypt",
+		ShortName:   "d",
+		Usage:       "decrypt file",
+		Description: "Decrypt files provided",
+		Action:      decrypt,
+	}
+	app.Commands = []cli.Command{
+		decryptCommand,
+	}
+}
+
 func main() {
-	homeDir := os.Getenv("HOME")
-	privringFile, err := os.Open(homeDir + "/.gnupg/secring.gpg")
+	privringFile, err := os.Open("test_keyring.gpg")
 	if err != nil {
 		log.Fatalln(err)
 	}
 	privring, _ := openpgp.ReadKeyRing(privringFile)
-	var private_email string
-	var myPrivateKey *openpgp.Entity
-	for myPrivateKey == nil {
-		if len(private_email) != 0 {
-			fmt.Printf("No key found for email address '%v'. Try again? (y/n)", private_email)
-			var again string
-			_, err := fmt.Scan(&again)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			if again != "y" {
-				return
+	denoisr = NewDenoisr(privring)
+	if false {
+		var private_email string
+		var myPrivateKey *openpgp.Entity
+		for myPrivateKey == nil {
+			if len(private_email) != 0 {
+				fmt.Printf("No key found for email address '%v'. Try again? (y/n)", private_email)
+				var again string
+				_, err := fmt.Scan(&again)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				if again != "y" {
+					return
+				} else {
+					private_email = ""
+					continue
+				}
 			} else {
-				private_email = ""
-				continue
+				fmt.Println("Insert the email for your private key")
+				_, err := fmt.Scan(&private_email)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				myPrivateKey = getKeyByEmail(privring, private_email)
 			}
-		} else {
-			fmt.Println("Insert the email for your private key")
-			_, err := fmt.Scan(&private_email)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			myPrivateKey = getKeyByEmail(privring, private_email)
 		}
+		fmt.Println(myPrivateKey)
 	}
-	fmt.Println(myPrivateKey)
 	decryptionKeys := privring.DecryptionKeys()
 	for _, key := range decryptionKeys {
 		fmt.Printf("Found decryption key with id %X\n", key.PublicKey.KeyId)
 	}
+	app.Run(os.Args)
+}
 
-	args := os.Args[1:]
-	if len(args) > 0 {
-		file, err := os.Open(args[0])
+func decrypt(c *cli.Context) {
+	input := c.Args().First()
+	if input == "" {
+		cli.ShowCommandHelp(c, "decrypt")
+	} else {
+		file, err := os.Open(input)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		pgpBlock, err := armor.Decode(file)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Println(pgpBlock.Type)
-		if alreadyPromptedKeys != nil {
-			alreadyPromptedKeys = nil
-		}
-		md, err := openpgp.ReadMessage(pgpBlock.Body, privring, openpgp.PromptFunction(promptForPassword), nil)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Println(md)
+		denoisr.DecryptMessage(file)
 	}
 }
 
@@ -79,25 +97,4 @@ func getKeyByEmail(keyring openpgp.EntityList, email string) *openpgp.Entity {
 	}
 
 	return nil
-}
-
-var alreadyPromptedKeys map[[20]byte]struct{}
-
-func promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
-	if alreadyPromptedKeys == nil {
-		alreadyPromptedKeys = make(map[[20]byte]struct{})
-	}
-	fmt.Printf("Keys: %v (%v)\n", len(keys)-len(alreadyPromptedKeys), keys)
-	for _, key := range keys {
-		if _, ok := alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
-			fmt.Printf("Please insert password for key with id '%X'\n", key.PublicKey.KeyId)
-			fmt.Scan(&password)
-			fmt.Printf("Password: %v", string(password))
-			alreadyPromptedKeys[key.PublicKey.Fingerprint] = struct{}{}
-			return password, nil
-		} else {
-			continue
-		}
-	}
-	return nil, errors.ErrKeyIncorrect
 }
