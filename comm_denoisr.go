@@ -5,6 +5,7 @@ import (
 	"code.google.com/p/go.crypto/openpgp"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -25,7 +26,10 @@ func init() {
 		ShortName:   "d",
 		Usage:       "decrypt file",
 		Description: "Decrypt files provided",
-		Action:      decrypt,
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
+		},
+		Action: decrypt,
 	}
 	app.Commands = []cli.Command{
 		decryptCommand,
@@ -45,34 +49,6 @@ func main() {
 		}
 	}
 	denoisr = NewDenoisr(privring)
-	if false {
-		var private_email string
-		var myPrivateKey *openpgp.Entity
-		for myPrivateKey == nil {
-			if len(private_email) != 0 {
-				fmt.Printf("No key found for email address '%v'. Try again? (y/n)", private_email)
-				var again string
-				_, err := fmt.Scanln(&again)
-				if err != nil {
-					log.Fatalln(err)
-				}
-				if again != "y" {
-					return
-				} else {
-					private_email = ""
-					continue
-				}
-			} else {
-				fmt.Println("Insert the email for your private key")
-				_, err := fmt.Scanln(&private_email)
-				if err != nil {
-					log.Fatalln(err)
-				}
-				myPrivateKey = getKeyByEmail(privring, private_email)
-			}
-		}
-		fmt.Println(myPrivateKey)
-	}
 	app.Run(os.Args)
 }
 
@@ -85,7 +61,15 @@ func decrypt(c *cli.Context) {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Println(denoisr.DecryptMessage(file))
+		decryptedMessage := denoisr.DecryptMessage(file)
+		if filename := c.String("output"); filename != "" {
+			err := ioutil.WriteFile(filename, []byte(decryptedMessage), os.FileMode(0007))
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else {
+			fmt.Println(decryptedMessage)
+		}
 	}
 }
 
