@@ -37,7 +37,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	privring, _ := openpgp.ReadKeyRing(privringFile)
+	privring, err := openpgp.ReadKeyRing(privringFile)
+	if err != nil {
+		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
 	denoisr = NewDenoisr(privring)
 	if false {
 		var private_email string
@@ -46,7 +52,7 @@ func main() {
 			if len(private_email) != 0 {
 				fmt.Printf("No key found for email address '%v'. Try again? (y/n)", private_email)
 				var again string
-				_, err := fmt.Scan(&again)
+				_, err := fmt.Scanln(&again)
 				if err != nil {
 					log.Fatalln(err)
 				}
@@ -58,7 +64,7 @@ func main() {
 				}
 			} else {
 				fmt.Println("Insert the email for your private key")
-				_, err := fmt.Scan(&private_email)
+				_, err := fmt.Scanln(&private_email)
 				if err != nil {
 					log.Fatalln(err)
 				}
@@ -66,10 +72,6 @@ func main() {
 			}
 		}
 		fmt.Println(myPrivateKey)
-	}
-	decryptionKeys := privring.DecryptionKeys()
-	for _, key := range decryptionKeys {
-		fmt.Printf("Found decryption key with id %X\n", key.PublicKey.KeyId)
 	}
 	app.Run(os.Args)
 }
@@ -83,7 +85,7 @@ func decrypt(c *cli.Context) {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		denoisr.DecryptMessage(file)
+		fmt.Println(denoisr.DecryptMessage(file))
 	}
 }
 
