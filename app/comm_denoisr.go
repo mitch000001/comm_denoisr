@@ -1,4 +1,4 @@
-package denoisr
+package decrypter
 
 import (
 	"code.google.com/p/go.crypto/openpgp"
@@ -6,37 +6,36 @@ import (
 	"code.google.com/p/go.crypto/openpgp/errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
-type Denoisr struct {
+type Decrypter struct {
 	privateKeyRing openpgp.KeyRing
 }
 
-func NewDenoisr(privateKeyRing openpgp.KeyRing) *Denoisr {
-	d := new(Denoisr)
+func NewDecrypter(privateKeyRing openpgp.KeyRing) *Decrypter {
+	d := new(Decrypter)
 	d.privateKeyRing = privateKeyRing
 	return d
 }
 
-func (denoisr *Denoisr) DecryptMessage(file *os.File) (message string) {
+func (decrypter *Decrypter) DecryptMessage(file *os.File) (message string, err error) {
 	pgpBlock, err := armor.Decode(file)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
 	if alreadyPromptedKeys != nil {
 		alreadyPromptedKeys = nil
 	}
-	md, err := openpgp.ReadMessage(pgpBlock.Body, denoisr.privateKeyRing, openpgp.PromptFunction(promptForPassword), nil)
+	md, err := openpgp.ReadMessage(pgpBlock.Body, decrypter.privateKeyRing, openpgp.PromptFunction(promptForPassword), nil)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
 	messageBody, err := ioutil.ReadAll(md.UnverifiedBody)
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
-	return string(messageBody)
+	return string(messageBody), nil
 }
 
 var alreadyPromptedKeys map[[20]byte]struct{}

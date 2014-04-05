@@ -11,7 +11,7 @@ import (
 )
 
 var app *cli.App
-var denoisr *Denoisr
+var decrypter *Decrypter
 
 func init() {
 	app = cli.NewApp()
@@ -38,17 +38,13 @@ func init() {
 
 func main() {
 	privringFile, err := os.Open("test_keyring.gpg")
-	if err != nil {
-		log.Fatalln(err)
-	}
+	check(err)
 	privring, err := openpgp.ReadKeyRing(privringFile)
 	if err != nil {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		check(err)
 	}
-	denoisr = NewDenoisr(privring)
+	decrypter = NewDecrypter(privring)
 	app.Run(os.Args)
 }
 
@@ -58,15 +54,12 @@ func decrypt(c *cli.Context) {
 		cli.ShowCommandHelp(c, "decrypt")
 	} else {
 		file, err := os.Open(input)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		decryptedMessage := denoisr.DecryptMessage(file)
+		check(err)
+		decryptedMessage, err := decrypter.DecryptMessage(file)
+		check(err)
 		if filename := c.String("output"); filename != "" {
-			err := ioutil.WriteFile(filename, []byte(decryptedMessage), os.FileMode(0007))
-			if err != nil {
-				log.Fatalln(err)
-			}
+			err := ioutil.WriteFile(filename, []byte(decryptedMessage), 0770)
+			check(err)
 		} else {
 			fmt.Println(decryptedMessage)
 		}
@@ -83,4 +76,10 @@ func getKeyByEmail(keyring openpgp.EntityList, email string) *openpgp.Entity {
 	}
 
 	return nil
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
