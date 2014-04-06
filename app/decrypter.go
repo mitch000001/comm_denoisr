@@ -10,24 +10,23 @@ import (
 )
 
 type Decrypter struct {
-	privateKeyRing openpgp.KeyRing
+	privateKeyRing      openpgp.KeyRing
+	alreadyPromptedKeys map[[20]byte]struct{}
 }
 
 func NewDecrypter(privateKeyRing openpgp.KeyRing) *Decrypter {
 	d := new(Decrypter)
 	d.privateKeyRing = privateKeyRing
+	d.alreadyPromptedKeys = make(map[[20]byte]struct{})
 	return d
 }
 
-func (decrypter *Decrypter) DecryptMessage(file *os.File) (message string, err error) {
+func (d *Decrypter) DecryptMessage(file *os.File) (message string, err error) {
 	pgpBlock, err := armor.Decode(file)
 	if err != nil {
 		return "", err
 	}
-	if alreadyPromptedKeys != nil {
-		alreadyPromptedKeys = nil
-	}
-	md, err := openpgp.ReadMessage(pgpBlock.Body, decrypter.privateKeyRing, openpgp.PromptFunction(promptForPassword), nil)
+	md, err := openpgp.ReadMessage(pgpBlock.Body, d.privateKeyRing, openpgp.PromptFunction(d.promptForPassword), nil)
 	if err != nil {
 		return "", err
 	}
@@ -38,17 +37,12 @@ func (decrypter *Decrypter) DecryptMessage(file *os.File) (message string, err e
 	return string(messageBody), nil
 }
 
-var alreadyPromptedKeys map[[20]byte]struct{}
-
-func promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
-	if alreadyPromptedKeys == nil {
-		alreadyPromptedKeys = make(map[[20]byte]struct{})
-	}
+func (d *Decrypter) promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 	for _, key := range keys {
-		if _, ok := alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
+		if _, ok := d.alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
 			fmt.Printf("Please insert password for key with id '%X': ", key.PublicKey.KeyId)
 			fmt.Scanln(&password)
-			alreadyPromptedKeys[key.PublicKey.Fingerprint] = struct{}{}
+			d.alreadyPromptedKeys[key.PublicKey.Fingerprint] = struct{}{}
 			key.PrivateKey.Decrypt(password)
 			return password, nil
 		} else {
