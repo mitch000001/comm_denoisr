@@ -44,7 +44,7 @@ func main() {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		check(err)
 	}
-	decrypter = NewDecrypter(privring)
+	decrypter = NewDecrypter(privring, nil)
 	app.Run(os.Args)
 }
 
