@@ -27,7 +27,7 @@ func init() {
 	}))
 }
 
-func TestDecryptMessage(t *testing.T) {
+func TestDecrypt(t *testing.T) {
 	file, err := os.Open("../encrypted_message_hidden_4E201F3E.txt")
 	if err != nil {
 		panic(err)
@@ -37,7 +37,7 @@ func TestDecryptMessage(t *testing.T) {
 		panic(err)
 	}
 	expectedMessage := string(decryptedBytes)
-	decryptedMessage, err := decrypter.DecryptMessage(file)
+	decryptedMessage, err := decrypter.Decrypt(file)
 	if err != nil {
 		t.Fatal(err)
 	}

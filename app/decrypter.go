@@ -27,7 +27,7 @@ func NewDecrypter(privateKeyRing openpgp.KeyRing, promptFunction openpgp.PromptF
 	return d
 }
 
-func (d *Decrypter) DecryptMessage(reader io.Reader) (message string, err error) {
+func (d *Decrypter) Decrypt(reader io.Reader) (message string, err error) {
 	pgpBlock, err := armor.Decode(reader)
 	if err != nil {
 		return "", err
