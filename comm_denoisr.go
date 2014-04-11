@@ -4,7 +4,7 @@ import (
 	"code.google.com/p/go.crypto/openpgp"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/mitch000001/comm_denoisr/app"
+	"github.com/mitch000001/comm_denoisr/crypto"
 	"io/ioutil"
 	"log"
 	"os"
