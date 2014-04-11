@@ -1,4 +1,4 @@
-package decrypter
+package crypto
 
 import (
 	"code.google.com/p/go.crypto/openpgp"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var decrypter *Decrypter
+var decrypter Decrypter
 
 func init() {
 	privringFile, err := os.Open("../test_keyring.gpg")
@@ -21,7 +21,7 @@ func init() {
 			panic(err)
 		}
 	}
-	decrypter = NewDecrypter(privring, openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
+	decrypter = NewOpenPgPDecrypter(privring, openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 		keys[0].PrivateKey.Decrypt([]byte("test1234"))
 		return nil, nil
 	}))

@@ -1,4 +1,4 @@
-package decrypter
+package crypto
 
 import (
 	"code.google.com/p/go.crypto/openpgp"
@@ -19,8 +19,8 @@ type OpenPgPDecrypter struct {
 	promptFunction      openpgp.PromptFunction
 }
 
-func NewDecrypter(privateKeyRing openpgp.KeyRing, promptFunction openpgp.PromptFunction) *Decrypter {
-	d := new(Decrypter)
+func NewOpenPgPDecrypter(privateKeyRing openpgp.KeyRing, promptFunction openpgp.PromptFunction) Decrypter {
+	d := &OpenPgPDecrypter{}
 	d.privateKeyRing = privateKeyRing
 	d.alreadyPromptedKeys = make(map[[20]byte]struct{})
 	if promptFunction != nil {

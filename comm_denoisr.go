@@ -11,7 +11,7 @@ import (
 )
 
 var app *cli.App
-var d *decrypter.Decrypter
+var d crypto.Decrypter
 
 func init() {
 	app = cli.NewApp()
@@ -44,7 +44,7 @@ func main() {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		check(err)
 	}
-	d = decrypter.NewDecrypter(privring, nil)
+	d = crypto.NewOpenPgPDecrypter(privring, nil)
 	app.Run(os.Args)
 }
 
