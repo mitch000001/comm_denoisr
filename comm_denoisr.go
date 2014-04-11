@@ -1,17 +1,17 @@
 package main
 
 import (
-	. "./app"
 	"code.google.com/p/go.crypto/openpgp"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/mitch000001/comm_denoisr/app"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
 var app *cli.App
-var decrypter *Decrypter
+var d *decrypter.Decrypter
 
 func init() {
 	app = cli.NewApp()
@@ -44,7 +44,7 @@ func main() {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		check(err)
 	}
-	decrypter = NewDecrypter(privring, nil)
+	d = decrypter.NewDecrypter(privring, nil)
 	app.Run(os.Args)
 }
 
@@ -55,7 +55,7 @@ func decrypt(c *cli.Context) {
 	} else {
 		file, err := os.Open(input)
 		check(err)
-		decryptedMessage, err := decrypter.Decrypt(file)
+		decryptedMessage, err := d.Decrypt(file)
 		check(err)
 		if filename := c.String("output"); filename != "" {
 			err := ioutil.WriteFile(filename, []byte(decryptedMessage), 0770)

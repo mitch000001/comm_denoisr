@@ -9,7 +9,11 @@ import (
 	"io/ioutil"
 )
 
-type Decrypter struct {
+type Decrypter interface {
+	Decrypt(io.Reader) (string, error)
+}
+
+type OpenPgPDecrypter struct {
 	privateKeyRing      openpgp.KeyRing
 	alreadyPromptedKeys map[[20]byte]struct{}
 	promptFunction      openpgp.PromptFunction
@@ -27,7 +31,7 @@ func NewDecrypter(privateKeyRing openpgp.KeyRing, promptFunction openpgp.PromptF
 	return d
 }
 
-func (d *Decrypter) Decrypt(reader io.Reader) (message string, err error) {
+func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (message string, err error) {
 	pgpBlock, err := armor.Decode(reader)
 	if err != nil {
 		return "", err
@@ -43,7 +47,7 @@ func (d *Decrypter) Decrypt(reader io.Reader) (message string, err error) {
 	return string(messageBody), nil
 }
 
-func getBashPromptForPassword(d *Decrypter) openpgp.PromptFunction {
+func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {
 	f := func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 		for _, key := range keys {
 			if _, ok := d.alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
@@ -61,7 +65,7 @@ func getBashPromptForPassword(d *Decrypter) openpgp.PromptFunction {
 	return openpgp.PromptFunction(f)
 }
 
-func (d *Decrypter) promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
+func (d *OpenPgPDecrypter) promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 	for _, key := range keys {
 		if _, ok := d.alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
 			fmt.Printf("Please insert password for key with id '%X': ", key.PublicKey.KeyId)
