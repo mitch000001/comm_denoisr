@@ -14,12 +14,12 @@ type Decrypter interface {
 }
 
 type OpenPgPDecrypter struct {
-	privateKeyRing      openpgp.KeyRing
+	privateKeyRing      openpgp.EntityList
 	alreadyPromptedKeys map[[20]byte]struct{}
 	promptFunction      openpgp.PromptFunction
 }
 
-func NewOpenPgPDecrypter(privateKeyRing openpgp.KeyRing, promptFunction openpgp.PromptFunction) Decrypter {
+func NewOpenPgPDecrypter(privateKeyRing openpgp.EntityList, promptFunction openpgp.PromptFunction) Decrypter {
 	d := &OpenPgPDecrypter{}
 	d.privateKeyRing = privateKeyRing
 	d.alreadyPromptedKeys = make(map[[20]byte]struct{})

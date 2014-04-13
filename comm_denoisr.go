@@ -66,18 +66,6 @@ func decrypt(c *cli.Context) {
 	}
 }
 
-func getKeyByEmail(keyring openpgp.EntityList, email string) *openpgp.Entity {
-	for _, entity := range keyring {
-		for _, ident := range entity.Identities {
-			if ident.UserId.Email == email {
-				return entity
-			}
-		}
-	}
-
-	return nil
-}
-
 func check(err error) {
 	if err != nil {
 		log.Fatalln(err)
