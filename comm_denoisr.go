@@ -12,6 +12,7 @@ import (
 
 var app *cli.App
 var d crypto.Decrypter
+var e crypto.Encrypter
 
 func init() {
 	app = cli.NewApp()
@@ -31,8 +32,19 @@ func init() {
 		},
 		Action: decrypt,
 	}
+	encryptCommand := cli.Command{
+		Name:        "encrypt",
+		ShortName:   "e",
+		Usage:       "encrypt file",
+		Description: "Encrypt files provided",
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
+		},
+		Action: encrypt,
+	}
 	app.Commands = []cli.Command{
 		decryptCommand,
+		encryptCommand,
 	}
 }
 
@@ -45,6 +57,7 @@ func main() {
 		check(err)
 	}
 	d = crypto.NewOpenPgPDecrypter(privring, nil)
+	e = crypto.NewOpenPgPEncrypter(privring)
 	app.Run(os.Args)
 }
 
@@ -62,6 +75,24 @@ func decrypt(c *cli.Context) {
 			check(err)
 		} else {
 			fmt.Println(decryptedMessage)
+		}
+	}
+}
+
+func encrypt(c *cli.Context) {
+	input := c.Args().First()
+	if input == "" {
+		cli.ShowCommandHelp(c, "encrypt")
+	} else {
+		file, err := os.Open(input)
+		check(err)
+		encryptedMessage, err := e.EncryptFor(file, []string{"test@example.com"})
+		check(err)
+		if filename := c.String("output"); filename != "" {
+			err := ioutil.WriteFile(filename, []byte(encryptedMessage), 0770)
+			check(err)
+		} else {
+			fmt.Println(encryptedMessage)
 		}
 	}
 }

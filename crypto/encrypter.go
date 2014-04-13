@@ -3,8 +3,7 @@ package crypto
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/openpgp"
-	_ "code.google.com/p/go.crypto/openpgp/armor"
-	_ "code.google.com/p/go.crypto/openpgp/errors"
+	"code.google.com/p/go.crypto/openpgp/armor"
 	"io"
 	"io/ioutil"
 )
@@ -41,23 +40,32 @@ func (e *OpenPgPEncrypter) Encrypt(reader io.Reader, password []byte) (encrypted
 }
 
 func (e *OpenPgPEncrypter) EncryptFor(reader io.Reader, to []string) (encryptedMessage string, err error) {
-	receipients := make([]*openpgp.Entity, len(to))
-	for i, _ := range to {
-		// TODO: add error handling, we can't know the content of 'to'
-		receipients[i] = getEntityForEmail(e.pubKeyRing, to[i])
+	receipients := make([]*openpgp.Entity, 0)
+	for _, email := range to {
+		entity := getEntityForEmail(e.pubKeyRing, email)
+		if entity == nil {
+			err = KeyNotFoundError(email)
+		} else {
+			receipients = append(receipients, entity)
+		}
+	}
+	if len(receipients) == 0 {
+		return encryptedMessage, err
 	}
 	message, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return encryptedMessage, err
 	}
-	cipherBuffer := new(bytes.Buffer)
-	writeCloser, err := openpgp.Encrypt(cipherBuffer, receipients, nil, nil, nil)
+	textBuffer := new(bytes.Buffer)
+	armoredWriteCloser, err := armor.Encode(textBuffer, "PGP MESSAGE", nil)
+	writeCloser, err := openpgp.Encrypt(armoredWriteCloser, receipients, nil, nil, nil)
 	if err != nil {
 		return encryptedMessage, err
 	}
 	writeCloser.Write(message)
 	writeCloser.Close()
-	encryptedMessage = string(cipherBuffer.Bytes())
+	armoredWriteCloser.Close()
+	encryptedMessage = textBuffer.String()
 	return
 }
 
