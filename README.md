@@ -4,11 +4,15 @@ Denoise your communications
 
 ## Roadmap
 
-### Version 0.0.1 = Current
+### Version 0.0.1
 
 * Message decryption via openpgp-library
 
-### Version 1.0.0 
+### Version 0.0.2 = Current
+
+* Message encryption via openpgp-library
+
+### Version 1.0.0
 
 * Decryption of streams of messages from unknown senders
 * filtering of own messages
