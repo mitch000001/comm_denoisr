@@ -24,19 +24,9 @@ func NewOpenPgPEncrypter(pubKeyRing openpgp.EntityList) Encrypter {
 }
 
 func (e *OpenPgPEncrypter) Encrypt(reader io.Reader, password []byte) (encryptedMessage string, err error) {
-	message, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return encryptedMessage, err
-	}
-	cipherBuffer := new(bytes.Buffer)
-	writeCloser, err := openpgp.SymmetricallyEncrypt(cipherBuffer, password, nil, nil)
-	if err != nil {
-		return encryptedMessage, err
-	}
-	writeCloser.Write(message)
-	writeCloser.Close()
-	encryptedMessage = string(cipherBuffer.Bytes())
-	return
+	return e.encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
+		return openpgp.SymmetricallyEncrypt(writeCloser, password, nil, nil)
+	})
 }
 
 func (e *OpenPgPEncrypter) EncryptFor(reader io.Reader, to []string) (encryptedMessage string, err error) {
@@ -50,17 +40,23 @@ func (e *OpenPgPEncrypter) EncryptFor(reader io.Reader, to []string) (encryptedM
 		}
 	}
 	if len(receipients) == 0 {
-		return encryptedMessage, err
+		return
 	}
+	return e.encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
+		return openpgp.Encrypt(writeCloser, receipients, nil, nil, nil)
+	})
+}
+
+func (e *OpenPgPEncrypter) encrypt(reader io.Reader, encryptFunction func(writeCloser io.WriteCloser) (io.WriteCloser, error)) (encryptedMessage string, err error) {
 	message, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return encryptedMessage, err
+		return
 	}
 	textBuffer := new(bytes.Buffer)
 	armoredWriteCloser, err := armor.Encode(textBuffer, "PGP MESSAGE", nil)
-	writeCloser, err := openpgp.Encrypt(armoredWriteCloser, receipients, nil, nil, nil)
+	writeCloser, err := encryptFunction(armoredWriteCloser)
 	if err != nil {
-		return encryptedMessage, err
+		return
 	}
 	writeCloser.Write(message)
 	writeCloser.Close()
