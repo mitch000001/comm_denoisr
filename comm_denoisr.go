@@ -49,7 +49,9 @@ func init() {
 }
 
 func main() {
+	// TODO: generify and let the user provide the keyring
 	privringFile, err := os.Open("test_keyring.gpg")
+	defer privringFile.Close()
 	check(err)
 	privring, err := openpgp.ReadKeyRing(privringFile)
 	if err != nil {
@@ -67,6 +69,7 @@ func decrypt(c *cli.Context) {
 		cli.ShowCommandHelp(c, "decrypt")
 	} else {
 		file, err := os.Open(input)
+		defer file.Close()
 		check(err)
 		decryptedMessage, err := d.Decrypt(file)
 		check(err)
@@ -85,6 +88,7 @@ func encrypt(c *cli.Context) {
 		cli.ShowCommandHelp(c, "encrypt")
 	} else {
 		file, err := os.Open(input)
+		defer file.Close()
 		check(err)
 		encryptedMessage, err := e.EncryptFor(file, []string{"test@example.com"})
 		check(err)

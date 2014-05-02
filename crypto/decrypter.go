@@ -14,7 +14,8 @@ type Decrypter interface {
 }
 
 type OpenPgPDecrypter struct {
-	privateKeyRing      openpgp.EntityList
+	privateKeyRing openpgp.EntityList
+	// TODO: move alreadyPromptedKeys into #Decrypt
 	alreadyPromptedKeys map[[20]byte]struct{}
 	promptFunction      openpgp.PromptFunction
 }
@@ -63,19 +64,4 @@ func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {
 		return nil, errors.ErrKeyIncorrect
 	}
 	return openpgp.PromptFunction(f)
-}
-
-func (d *OpenPgPDecrypter) promptForPassword(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
-	for _, key := range keys {
-		if _, ok := d.alreadyPromptedKeys[key.PublicKey.Fingerprint]; !ok {
-			fmt.Printf("Please insert password for key with id '%X': ", key.PublicKey.KeyId)
-			fmt.Scanln(&password)
-			d.alreadyPromptedKeys[key.PublicKey.Fingerprint] = struct{}{}
-			key.PrivateKey.Decrypt(password)
-			return password, nil
-		} else {
-			continue
-		}
-	}
-	return nil, errors.ErrKeyIncorrect
 }
