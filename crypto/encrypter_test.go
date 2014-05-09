@@ -25,9 +25,42 @@ func init() {
 	}
 	encrypter = NewOpenPgPEncrypter(privring)
 	decrypter = NewOpenPgPDecrypter(privring, openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
-		keys[0].PrivateKey.Decrypt([]byte("test1234"))
-		return nil, nil
+		if len(keys) > 0 {
+			keys[0].PrivateKey.Decrypt([]byte("test1234"))
+		}
+		return []byte("test1234"), nil
 	}))
+}
+
+func TestEncrypt(t *testing.T) {
+	file, err := os.Open("../decrypted_message.txt")
+	defer file.Close()
+	if err != nil {
+		panic(err)
+	}
+	plainBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	expectedMessage := string(plainBytes)
+	encryptedMessage, err := encrypter.Encrypt(bytes.NewReader(plainBytes), "test1234")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plain, err := decrypter.Decrypt(strings.NewReader(encryptedMessage))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decryptedBytes, err := ioutil.ReadAll(plain.Body())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	decryptedMessage := string(decryptedBytes)
+	if decryptedMessage != expectedMessage {
+		t.Fatalf("expected %v to equal %v", decryptedMessage, expectedMessage)
+	}
 }
 
 func TestEncryptFor(t *testing.T) {

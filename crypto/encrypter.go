@@ -10,7 +10,7 @@ import (
 )
 
 type Encrypter interface {
-	Encrypt(message io.Reader, password []byte) (string, error)
+	Encrypt(message io.Reader, password string) (string, error)
 	// Encrypt the given message for all receipients in to
 	// Returns the encrypted message or an error
 	EncryptFor(message io.Reader, to []string) (string, error)
@@ -24,9 +24,9 @@ func NewOpenPgPEncrypter(pubKeyRing openpgp.EntityList) Encrypter {
 	return &OpenPgPEncrypter{pubKeyRing: pubKeyRing}
 }
 
-func (e *OpenPgPEncrypter) Encrypt(reader io.Reader, password []byte) (string, error) {
+func (e *OpenPgPEncrypter) Encrypt(reader io.Reader, password string) (string, error) {
 	return encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
-		return openpgp.SymmetricallyEncrypt(writeCloser, password, nil, nil)
+		return openpgp.SymmetricallyEncrypt(writeCloser, []byte(password), nil, nil)
 	})
 }
 
