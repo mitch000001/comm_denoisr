@@ -71,13 +71,15 @@ func decrypt(c *cli.Context) {
 		file, err := os.Open(input)
 		defer file.Close()
 		check(err)
-		decryptedMessage, err := d.Decrypt(file)
+		plain, err := d.Decrypt(file)
+		check(err)
+		decryptedBytes, err := ioutil.ReadAll(plain.Body())
 		check(err)
 		if filename := c.String("output"); filename != "" {
-			err := ioutil.WriteFile(filename, []byte(decryptedMessage), 0770)
+			err := ioutil.WriteFile(filename, []byte(decryptedBytes), 0770)
 			check(err)
 		} else {
-			fmt.Println(decryptedMessage)
+			fmt.Println(string(decryptedBytes))
 		}
 	}
 }

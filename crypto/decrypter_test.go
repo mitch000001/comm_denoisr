@@ -37,10 +37,15 @@ func TestDecrypt(t *testing.T) {
 		panic(err)
 	}
 	expectedMessage := string(decryptedBytes)
-	decryptedMessage, err := decrypter.Decrypt(file)
+	plain, err := decrypter.Decrypt(file)
 	if err != nil {
 		t.Fatal(err)
 	}
+	decrypted, err := ioutil.ReadAll(plain.Body())
+	if err != nil {
+		t.Fatal(err)
+	}
+	decryptedMessage := string(decrypted)
 	if decryptedMessage != expectedMessage {
 		t.Fatalf("expected %v to equal %v", decryptedMessage, expectedMessage)
 	}

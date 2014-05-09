@@ -46,11 +46,16 @@ func TestEncryptFor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decryptedMessage, err := decrypter.Decrypt(strings.NewReader(encryptedMessage))
+	plain, err := decrypter.Decrypt(strings.NewReader(encryptedMessage))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decryptedBytes, err := ioutil.ReadAll(plain.Body())
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	decryptedMessage := string(decryptedBytes)
 	if decryptedMessage != expectedMessage {
 		t.Fatalf("expected %v to equal %v", decryptedMessage, expectedMessage)
 	}

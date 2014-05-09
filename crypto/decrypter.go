@@ -4,13 +4,35 @@ import (
 	"code.google.com/p/go.crypto/openpgp"
 	"code.google.com/p/go.crypto/openpgp/armor"
 	"code.google.com/p/go.crypto/openpgp/errors"
+	"code.google.com/p/go.crypto/openpgp/packet"
 	"fmt"
 	"io"
-	"io/ioutil"
 )
 
+type Plain interface {
+	Body() io.Reader
+	IsBinary() bool
+	FileName() string
+}
+
 type Decrypter interface {
-	Decrypt(io.Reader) (string, error)
+	Decrypt(io.Reader) (Plain, error)
+}
+
+type OpenPgpPlain struct {
+	ld packet.LiteralData
+}
+
+func (p *OpenPgpPlain) Body() io.Reader {
+	return p.ld.Body
+}
+
+func (p *OpenPgpPlain) IsBinary() bool {
+	return p.ld.IsBinary
+}
+
+func (p *OpenPgpPlain) FileName() string {
+	return p.ld.FileName
 }
 
 type OpenPgPDecrypter struct {
@@ -32,20 +54,16 @@ func NewOpenPgPDecrypter(privateKeyRing openpgp.EntityList, promptFunction openp
 	return d
 }
 
-func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (message string, err error) {
+func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (plain Plain, err error) {
 	pgpBlock, err := armor.Decode(reader)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	md, err := openpgp.ReadMessage(pgpBlock.Body, d.privateKeyRing, d.promptFunction, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	messageBody, err := ioutil.ReadAll(md.UnverifiedBody)
-	if err != nil {
-		return "", err
-	}
-	return string(messageBody), nil
+	return &OpenPgpPlain{*md.LiteralData}, nil
 }
 
 func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {
