@@ -25,7 +25,7 @@ func init() {
 	decryptCommand := cli.Command{
 		Name:        "decrypt",
 		ShortName:   "d",
-		Usage:       "decrypt file",
+		Usage:       "decrypt encrypted_file.txt",
 		Description: "Decrypt files provided",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
@@ -35,7 +35,7 @@ func init() {
 	encryptCommand := cli.Command{
 		Name:        "encrypt",
 		ShortName:   "e",
-		Usage:       "encrypt file",
+		Usage:       "encrypt plaintext_file.txt",
 		Description: "Encrypt files provided",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
@@ -92,6 +92,7 @@ func encrypt(c *cli.Context) {
 		file, err := os.Open(input)
 		defer file.Close()
 		check(err)
+		// TODO: ask the user for an email, maybe present options from keyring
 		encryptedMessage, err := e.EncryptForHidden(file, []string{"test@example.com"})
 		check(err)
 		if filename := c.String("output"); filename != "" {
