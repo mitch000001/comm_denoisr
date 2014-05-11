@@ -18,7 +18,7 @@ func init() {
 	app = cli.NewApp()
 	app.Name = "comm_denoisr"
 	app.Usage = "Denoise your communication"
-	app.Version = "0.0.2"
+	app.Version = "0.1.0"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "input, i", Usage: "Set filename here"},
 	}
