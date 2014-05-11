@@ -92,7 +92,7 @@ func encrypt(c *cli.Context) {
 		file, err := os.Open(input)
 		defer file.Close()
 		check(err)
-		encryptedMessage, err := e.EncryptFor(file, []string{"test@example.com"})
+		encryptedMessage, err := e.EncryptForHidden(file, []string{"test@example.com"})
 		check(err)
 		if filename := c.String("output"); filename != "" {
 			err := ioutil.WriteFile(filename, []byte(encryptedMessage), 0770)

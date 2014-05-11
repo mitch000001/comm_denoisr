@@ -11,9 +11,12 @@ import (
 
 type Encrypter interface {
 	Encrypt(message io.Reader, password string) (string, error)
-	// Encrypt the given message for all receipients in to
+	// Encrypt the given message for all recipients in to
 	// Returns the encrypted message or an error
 	EncryptFor(message io.Reader, to []string) (string, error)
+	// Encrypt the given message for all recipients in to and hides the recipients in the encrypted message
+	// Returns the encrypted message or an error
+	EncryptForHidden(message io.Reader, to []string) (string, error)
 }
 
 type OpenPgPEncrypter struct {
@@ -34,16 +37,45 @@ func (e *OpenPgPEncrypter) EncryptFor(reader io.Reader, to []string) (string, er
 	if len(to) == 0 {
 		return "", errors.New("Missing recipient")
 	}
-	receipients := make([]*openpgp.Entity, 0)
+	recipients := make([]*openpgp.Entity, 0)
 	for _, email := range to {
 		entity := getEntityForEmail(e.pubKeyRing, email)
 		if entity == nil {
 			return "", KeyNotFoundError(email)
 		}
-		receipients = append(receipients, entity)
+		recipients = append(recipients, entity)
 	}
 	return encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
-		return openpgp.Encrypt(writeCloser, receipients, nil, nil, nil)
+		return openpgp.Encrypt(writeCloser, recipients, nil, nil, nil)
+	})
+}
+
+func (e *OpenPgPEncrypter) EncryptForHidden(reader io.Reader, to []string) (string, error) {
+	if len(to) == 0 {
+		return "", errors.New("Missing recipient")
+	}
+	recipients := make([]*openpgp.Entity, 0)
+	fingerprintKeyMap := make(map[[20]byte]uint64)
+	for _, email := range to {
+		entity := getEntityForEmail(e.pubKeyRing, email)
+		if entity == nil {
+			return "", KeyNotFoundError(email)
+		}
+		recipients = append(recipients, entity)
+		for _, s := range entity.Subkeys {
+			fingerprintKeyMap[s.PublicKey.Fingerprint] = s.PublicKey.KeyId
+			s.PublicKey.KeyId = uint64(0)
+		}
+	}
+	defer func() {
+		for _, entity := range recipients {
+			for _, s := range entity.Subkeys {
+				s.PublicKey.KeyId = fingerprintKeyMap[s.PublicKey.Fingerprint]
+			}
+		}
+	}()
+	return encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
+		return openpgp.Encrypt(writeCloser, recipients, nil, nil, nil)
 	})
 }
 
