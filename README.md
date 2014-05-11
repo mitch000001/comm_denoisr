@@ -8,9 +8,13 @@ Denoise your communications
 
 * Message decryption via openpgp-library
 
-### Version 0.0.2 = Current
+### Version 0.0.2
 
 * Message encryption via openpgp-library
+
+### Version 0.1.0 = Current
+
+* Message encryption with hidden recipients
 
 ### Version 1.0.0
 
