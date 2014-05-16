@@ -68,7 +68,7 @@ func TestEncrypt(t *testing.T) {
 }
 
 func TestEncryptFor(t *testing.T) {
-	file, err := os.Open("../decrypted_message.txt")
+	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
 		panic(err)
@@ -99,7 +99,7 @@ func TestEncryptFor(t *testing.T) {
 }
 
 func TestEncryptForHidden(t *testing.T) {
-	file, err := os.Open("../decrypted_message.txt")
+	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
 		panic(err)
