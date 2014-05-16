@@ -19,6 +19,8 @@ type OpenPgPEncrypter struct {
 	pubKeyRing openpgp.EntityList
 }
 
+type encryptFunction func(writeCloser io.WriteCloser) (io.WriteCloser, error)
+
 func NewOpenPgPEncrypter(pubKeyRing openpgp.EntityList) Encrypter {
 	return &OpenPgPEncrypter{pubKeyRing: pubKeyRing}
 }
@@ -33,13 +35,9 @@ func (e *OpenPgPEncrypter) EncryptFor(reader io.Reader, to []string) (string, er
 	if len(to) == 0 {
 		return "", errors.New("Missing recipient")
 	}
-	recipients := make([]*openpgp.Entity, 0)
-	for _, email := range to {
-		entity := getEntityForEmail(e.pubKeyRing, email)
-		if entity == nil {
-			return "", KeyNotFoundError(email)
-		}
-		recipients = append(recipients, entity)
+	recipients, err := e.recipients(to)
+	if err != nil {
+		return "", err
 	}
 	return encrypt(reader, func(writeCloser io.WriteCloser) (io.WriteCloser, error) {
 		return openpgp.Encrypt(writeCloser, recipients, nil, nil, nil)
@@ -50,14 +48,12 @@ func (e *OpenPgPEncrypter) EncryptForHidden(reader io.Reader, to []string) (stri
 	if len(to) == 0 {
 		return "", errors.New("Missing recipient")
 	}
-	recipients := make([]*openpgp.Entity, 0)
+	recipients, err := e.recipients(to)
+	if err != nil {
+		return "", err
+	}
 	fingerprintKeyMap := make(map[[20]byte]uint64)
-	for _, email := range to {
-		entity := getEntityForEmail(e.pubKeyRing, email)
-		if entity == nil {
-			return "", KeyNotFoundError(email)
-		}
-		recipients = append(recipients, entity)
+	for _, entity := range recipients {
 		for _, s := range entity.Subkeys {
 			fingerprintKeyMap[s.PublicKey.Fingerprint] = s.PublicKey.KeyId
 			s.PublicKey.KeyId = uint64(0)
@@ -75,14 +71,14 @@ func (e *OpenPgPEncrypter) EncryptForHidden(reader io.Reader, to []string) (stri
 	})
 }
 
-func encrypt(reader io.Reader, encryptFunction func(writeCloser io.WriteCloser) (io.WriteCloser, error)) (string, error) {
+func encrypt(reader io.Reader, encryptor encryptFunction) (string, error) {
 	message, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return "", err
 	}
 	textBuffer := new(bytes.Buffer)
 	armoredWriteCloser, err := armor.Encode(textBuffer, "PGP MESSAGE", nil)
-	writeCloser, err := encryptFunction(armoredWriteCloser)
+	writeCloser, err := encryptor(armoredWriteCloser)
 	if err != nil {
 		return "", err
 	}
@@ -90,6 +86,18 @@ func encrypt(reader io.Reader, encryptFunction func(writeCloser io.WriteCloser) 
 	writeCloser.Close()
 	armoredWriteCloser.Close()
 	return textBuffer.String(), nil
+}
+
+func (e *OpenPgPEncrypter) recipients(to []string) ([]*openpgp.Entity, error) {
+	recipients := make([]*openpgp.Entity, 0)
+	for _, email := range to {
+		entity := getEntityForEmail(e.pubKeyRing, email)
+		if entity == nil {
+			return nil, KeyNotFoundError(email)
+		}
+		recipients = append(recipients, entity)
+	}
+	return recipients, nil
 }
 
 func getEntityForEmail(keyring openpgp.EntityList, email string) *openpgp.Entity {
