@@ -50,7 +50,7 @@ func init() {
 
 func main() {
 	// TODO: generify and let the user provide the keyring
-	privringFile, err := os.Open("test_keyring.gpg")
+	privringFile, err := os.Open("fixtures/test_keyring.gpg")
 	defer privringFile.Close()
 	check(err)
 	privring, err := openpgp.ReadKeyRing(privringFile)

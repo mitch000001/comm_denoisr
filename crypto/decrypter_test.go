@@ -10,7 +10,7 @@ import (
 var decrypter Decrypter
 
 func init() {
-	privringFile, err := os.Open("../test_keyring.gpg")
+	privringFile, err := os.Open("../fixtures/test_keyring.gpg")
 	if err != nil {
 		panic(err)
 	}
@@ -28,11 +28,11 @@ func init() {
 }
 
 func TestDecrypt(t *testing.T) {
-	file, err := os.Open("../encrypted_message_hidden_4E201F3E.txt")
+	file, err := os.Open("../fixtures/encrypted_message_hidden_4E201F3E.txt")
 	if err != nil {
 		panic(err)
 	}
-	decryptedBytes, err := ioutil.ReadFile("../decrypted_message.txt")
+	decryptedBytes, err := ioutil.ReadFile("../fixtures/decrypted_message.txt")
 	if err != nil {
 		panic(err)
 	}

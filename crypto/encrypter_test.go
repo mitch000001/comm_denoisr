@@ -15,7 +15,7 @@ var privring openpgp.EntityList
 var promptFunction openpgp.PromptFunction
 
 func init() {
-	privringFile, err := os.Open("../test_keyring.gpg")
+	privringFile, err := os.Open("../fixtures/test_keyring.gpg")
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +37,7 @@ func init() {
 }
 
 func TestEncrypt(t *testing.T) {
-	file, err := os.Open("../decrypted_message.txt")
+	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
 		panic(err)
