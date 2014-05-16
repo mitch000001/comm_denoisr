@@ -48,9 +48,17 @@ func init() {
 	}
 }
 
+var GnupgPublicKeyring string = os.Getenv("HOME") + "/.gnupg/secring.gpg"
+
 func main() {
-	// TODO: generify and let the user provide the keyring
-	privringFile, err := os.Open("fixtures/test_keyring.gpg")
+	fmt.Printf("Please enter the path to your private keyring [%v]: ", GnupgPublicKeyring)
+	var keyring string
+	fmt.Scanln(&keyring)
+	if keyring == "" {
+		keyring = GnupgPublicKeyring
+	}
+	fmt.Printf("Using '%v' as keyring file\n", keyring)
+	privringFile, err := os.Open(keyring)
 	defer privringFile.Close()
 	check(err)
 	privring, err := openpgp.ReadKeyRing(privringFile)
@@ -93,7 +101,21 @@ func encrypt(c *cli.Context) {
 		defer file.Close()
 		check(err)
 		// TODO: ask the user for an email, maybe present options from keyring
-		encryptedMessage, err := e.EncryptForHidden(file, []string{"test@example.com"})
+		fmt.Print("Enter the emails to which the message should be encrypted, separated by spaces: ")
+		emails := make([]string, 10)
+		iSlice := make([]interface{}, len(emails))
+		for i := range emails {
+			iSlice[i] = &emails[i]
+		}
+		fmt.Scanln(iSlice...)
+		recipients := make([]string, 0)
+		for _, v := range emails {
+			if v != "" {
+				recipients = append(recipients, v)
+			}
+		}
+		fmt.Printf("Message will be encrypted to the following recipients: %v\n", recipients)
+		encryptedMessage, err := e.EncryptForHidden(file, recipients)
 		check(err)
 		if filename := c.String("output"); filename != "" {
 			err := ioutil.WriteFile(filename, []byte(encryptedMessage), 0770)
