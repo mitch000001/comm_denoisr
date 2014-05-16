@@ -7,9 +7,7 @@ import (
 	"testing"
 )
 
-var decrypter Decrypter
-
-func init() {
+func TestDecrypt(t *testing.T) {
 	privringFile, err := os.Open("../fixtures/test_keyring.gpg")
 	if err != nil {
 		panic(err)
@@ -21,13 +19,11 @@ func init() {
 			panic(err)
 		}
 	}
-	decrypter = NewOpenPgPDecrypter(privring, openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
+	decrypter := NewOpenPgPDecrypter(privring, openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 		keys[0].PrivateKey.Decrypt([]byte("test1234"))
 		return nil, nil
 	}))
-}
 
-func TestDecrypt(t *testing.T) {
 	file, err := os.Open("../fixtures/encrypted_message_hidden_4E201F3E.txt")
 	if err != nil {
 		panic(err)

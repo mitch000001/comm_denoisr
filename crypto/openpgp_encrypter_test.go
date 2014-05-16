@@ -10,33 +10,34 @@ import (
 	"testing"
 )
 
-var encrypter Encrypter
-var privring openpgp.EntityList
-var promptFunction openpgp.PromptFunction
-
-func init() {
+func readPrivateKeyRing() openpgp.EntityList {
 	privringFile, err := os.Open("../fixtures/test_keyring.gpg")
 	if err != nil {
 		panic(err)
 	}
-	privring, err = openpgp.ReadKeyRing(privringFile)
+	privring, err := openpgp.ReadKeyRing(privringFile)
 	if err != nil {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		if err != nil {
 			panic(err)
 		}
 	}
-	encrypter = NewOpenPgPEncrypter(privring)
-	promptFunction = openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
+	return privring
+}
+
+func createDecryptionPrompt() openpgp.PromptFunction {
+	promptFunction := openpgp.PromptFunction(func(keys []openpgp.Key, symmetric bool) (password []byte, err error) {
 		if len(keys) > 0 {
 			keys[0].PrivateKey.Decrypt([]byte("test1234"))
 		}
 		return []byte("test1234"), nil
 	})
-	decrypter = NewOpenPgPDecrypter(privring, promptFunction)
+	return promptFunction
 }
 
 func TestEncrypt(t *testing.T) {
+	decrypter := NewOpenPgPDecrypter(readPrivateKeyRing(), createDecryptionPrompt())
+	encrypter := NewOpenPgPEncrypter(readPrivateKeyRing())
 	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
@@ -68,6 +69,8 @@ func TestEncrypt(t *testing.T) {
 }
 
 func TestEncryptFor(t *testing.T) {
+	decrypter := NewOpenPgPDecrypter(readPrivateKeyRing(), createDecryptionPrompt())
+	encrypter := NewOpenPgPEncrypter(readPrivateKeyRing())
 	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
@@ -99,6 +102,9 @@ func TestEncryptFor(t *testing.T) {
 }
 
 func TestEncryptForHidden(t *testing.T) {
+	privring := readPrivateKeyRing()
+	promptFunction := createDecryptionPrompt()
+	encrypter := NewOpenPgPEncrypter(privring)
 	file, err := os.Open("../fixtures/decrypted_message.txt")
 	defer file.Close()
 	if err != nil {
