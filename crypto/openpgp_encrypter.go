@@ -9,6 +9,12 @@ import (
 	"io/ioutil"
 )
 
+type KeyNotFoundError string
+
+func (e KeyNotFoundError) Error() string {
+	return "Key not found for '" + string(e) + "'"
+}
+
 type OpenPgPEncrypter struct {
 	pubKeyRing openpgp.EntityList
 }
