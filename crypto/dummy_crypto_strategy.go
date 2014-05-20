@@ -4,59 +4,55 @@ import (
 	"io"
 )
 
-type NoOpCryptoStrategy struct {
-	NoOpEncrypter
-	NoOpDecrypter
+type DummyCryptoStrategy struct {
+	DummyEncrypter
+	DummyDecrypter
 }
 
-type NoOpEncrypter struct{}
+type DummyEncrypter struct{}
 
-func (this *NoOpEncrypter) Encrypt(message io.Reader, password string) (string, error) {
-	messageBytes, err := ioutil.ReadAll(message)
-	if err != nil {
-		return "", err
-	}
-	return string(messageBytes), nil
+func (this *DummyEncrypter) Encrypt(message io.Reader, password string) (string, error) {
+	return "", nil
 }
 
-func (this *NoOpEncrypter) EncryptFor(message io.Reader, to []string) (string, error) {
-	return this.Encrypt(message, "")
+func (this *DummyEncrypter) EncryptFor(message io.Reader, to []string) (string, error) {
+	return "", nil
 }
 
-func (this *NoOpEncrypter) EncryptForHidden(message io.Reader, to []string) (string, error) {
-	return this.Encrypt(message, "")
+func (this *DummyEncrypter) EncryptForHidden(message io.Reader, to []string) (string, error) {
+	return "", nil
 }
 
-type NoOpPlain struct {
+type DummyPlain struct {
 	body     io.Reader
 	isBinary bool
 	fileName string
 }
 
-func (this *NoOpPlain) Body() io.Reader {
-	return this.body
+func (this *DummyPlain) Body() io.Reader {
+	return nil
 }
 
-func (this *NoOpPlain) IsBinary() bool {
-	return this.isBinary
+func (this *DummyPlain) IsBinary() bool {
+	return false
 }
 
-func (this *NoOpPlain) FileName() string {
-	return this.fileName
+func (this *DummyPlain) FileName() string {
+	return ""
 }
 
-type NoOpDecrypter struct{}
+type DummyDecrypter struct{}
 
-func (this *NoOpDecrypter) Decrypt(message io.Reader) (Plain, error) {
-	return &NoOpPlain{body: message, isBinary: false, fileName: ""}, nil
+func (this *DummyDecrypter) Decrypt(message io.Reader) (Plain, error) {
+	return &DummyPlain{}, nil
 }
 
-func (this *NoOpDecrypter) CanDecrypt(message io.Reader) (bool, io.Reader) {
-	return true, message
+func (this *DummyDecrypter) CanDecrypt(message io.Reader) (bool, io.Reader) {
+	return false, nil
 }
 
-type NoOpSigner struct{}
+type DummySigner struct{}
 
-func (this *NoOpSigner) Sign(message io.Reader) (io.Reader, error) {
-	return message, nil
+func (this *DummySigner) Sign(message io.Reader) (io.Reader, error) {
+	return nil, nil
 }
