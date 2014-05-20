@@ -12,8 +12,7 @@ import (
 )
 
 var app *cli.App
-var d crypto.Decrypter
-var e crypto.Encrypter
+var cryptoStrategy crypto.CryptoStrategy
 
 func init() {
 	app = cli.NewApp()
@@ -29,7 +28,7 @@ func init() {
 		Usage:       "decrypt encrypted_file.txt",
 		Description: "Decrypt files provided",
 		Flags: []cli.Flag{
-			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
+			cli.StringFlag{Name: "output, o", Usage: "--output filename"},
 		},
 		Action: decrypt,
 	}
@@ -39,7 +38,8 @@ func init() {
 		Usage:       "encrypt plaintext_file.txt",
 		Description: "Encrypt files provided",
 		Flags: []cli.Flag{
-			cli.StringFlag{Name: "output, o", Usage: "-output filename"},
+			cli.StringFlag{Name: "output, o", Usage: "--output filename"},
+			cli.BoolFlag{Name: "hidden-recipient, R", Usage: "--hidden-recipient"},
 		},
 		Action: encrypt,
 	}
@@ -67,8 +67,7 @@ func main() {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		check(err)
 	}
-	d = crypto.NewOpenPgPDecrypter(privring, nil)
-	e = crypto.NewOpenPgPEncrypter(privring)
+	cryptoStrategy = crypto.NewOpenPgpCryptoStrategy(privring, nil)
 	app.Run(os.Args)
 }
 
@@ -80,11 +79,11 @@ func decrypt(c *cli.Context) {
 		file, err := os.Open(input)
 		defer file.Close()
 		check(err)
-		canDecrypt, reader := d.CanDecrypt(file)
+		canDecrypt, reader := cryptoStrategy.CanDecrypt(file)
 		if !canDecrypt {
 			log.Fatalln("Can not decrypt encrypted data provided")
 		}
-		plain, err := d.Decrypt(reader)
+		plain, err := cryptoStrategy.Decrypt(reader)
 		check(err)
 		decryptedBytes, err := ioutil.ReadAll(plain.Body())
 		check(err)
@@ -111,7 +110,13 @@ func encrypt(c *cli.Context) {
 		fmt.Scanln(&emails)
 		recipients := strings.Split(emails, " ")
 		fmt.Printf("Message will be encrypted to the following recipients: %v\n", recipients)
-		encryptedMessage, err := e.EncryptForHidden(file, recipients)
+		encryptHidden := c.Bool("hidden-recipient")
+		var encryptedMessage string
+		if encryptHidden {
+			encryptedMessage, err = cryptoStrategy.EncryptForHidden(file, recipients)
+		} else {
+			encryptedMessage, err = cryptoStrategy.EncryptFor(file, recipients)
+		}
 		check(err)
 		if filename := c.String("output"); filename != "" {
 			err := ioutil.WriteFile(filename, []byte(encryptedMessage), 0770)

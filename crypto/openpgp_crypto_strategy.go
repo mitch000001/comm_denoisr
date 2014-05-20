@@ -17,6 +17,19 @@ type OpenPgpCryptoStrategy struct {
 	OpenPgPDecrypter
 }
 
+func NewOpenPgpCryptoStrategy(keyring openpgp.EntityList, promptFunction openpgp.PromptFunction) CryptoStrategy {
+	e := OpenPgPEncrypter{keyring}
+	d := OpenPgPDecrypter{}
+	d.privateKeyRing = keyring
+	d.alreadyPromptedKeys = make(map[[20]byte]struct{})
+	if promptFunction != nil {
+		d.promptFunction = promptFunction
+	} else {
+		d.promptFunction = getBashPromptForPassword(&d)
+	}
+	return &OpenPgpCryptoStrategy{e, d}
+}
+
 type KeyNotFoundError string
 
 func (e KeyNotFoundError) Error() string {
@@ -26,8 +39,6 @@ func (e KeyNotFoundError) Error() string {
 type OpenPgPEncrypter struct {
 	pubKeyRing openpgp.EntityList
 }
-
-type encryptFunction func(writeCloser io.WriteCloser) (io.WriteCloser, error)
 
 func NewOpenPgPEncrypter(pubKeyRing openpgp.EntityList) Encrypter {
 	return &OpenPgPEncrypter{pubKeyRing: pubKeyRing}
@@ -78,6 +89,8 @@ func (e *OpenPgPEncrypter) EncryptForHidden(reader io.Reader, to []string) (stri
 		return openpgp.Encrypt(writeCloser, recipients, nil, nil, nil)
 	})
 }
+
+type encryptFunction func(writeCloser io.WriteCloser) (io.WriteCloser, error)
 
 func encrypt(reader io.Reader, encryptor encryptFunction) (string, error) {
 	message, err := ioutil.ReadAll(reader)
