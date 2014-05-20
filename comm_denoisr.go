@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 var app *cli.App
@@ -106,18 +107,9 @@ func encrypt(c *cli.Context) {
 		check(err)
 		// TODO: ask the user for an email, maybe present options from keyring
 		fmt.Print("Enter the emails to which the message should be encrypted, separated by spaces: ")
-		emails := make([]string, 10)
-		iSlice := make([]interface{}, len(emails))
-		for i := range emails {
-			iSlice[i] = &emails[i]
-		}
-		fmt.Scanln(iSlice...)
-		recipients := make([]string, 0)
-		for _, v := range emails {
-			if v != "" {
-				recipients = append(recipients, v)
-			}
-		}
+		var emails string
+		fmt.Scanln(&emails)
+		recipients := strings.Split(emails, " ")
 		fmt.Printf("Message will be encrypted to the following recipients: %v\n", recipients)
 		encryptedMessage, err := e.EncryptForHidden(file, recipients)
 		check(err)
