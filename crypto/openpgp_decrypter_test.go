@@ -2,7 +2,6 @@ package crypto
 
 import (
 	"code.google.com/p/go.crypto/openpgp"
-	"io"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -69,8 +68,8 @@ func TestCanDecrypt(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	readerToTest := io.Reader(file)
-	canDecrypt := decrypter.CanDecrypt(&readerToTest)
+
+	canDecrypt, _ := decrypter.CanDecrypt(file)
 
 	if !canDecrypt {
 		t.Fatalf("expected CanDecrypt to return true, got false")

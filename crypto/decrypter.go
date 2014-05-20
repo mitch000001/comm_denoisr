@@ -15,8 +15,14 @@ type Plain interface {
 }
 
 type Decrypter interface {
+	// Decrypts the given reader and returns a Plain with the content
+	// and corresponding metadata
 	Decrypt(io.Reader) (Plain, error)
-	CanDecrypt(*io.Reader) bool
+	// Returns true if the provided reader is decryptable by the
+	// decrypter. Note that the reader will get consumed.
+	// Returns also a new reader with the contents read from the
+	// input reader
+	CanDecrypt(io.Reader) (bool, io.Reader)
 }
 
 type NoOpPlain struct {
@@ -43,6 +49,6 @@ func (this *NoOpDecrypter) Decrypt(message io.Reader) (Plain, error) {
 	return &NoOpPlain{body: message, isBinary: false, fileName: ""}, nil
 }
 
-func (this *NoOpDecrypter) CanDecrypt(message *io.Reader) bool {
-	return true
+func (this *NoOpDecrypter) CanDecrypt(message io.Reader) (bool, io.Reader) {
+	return true, message
 }

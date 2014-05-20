@@ -60,20 +60,18 @@ func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (plain Plain, err error) {
 	return &OpenPgpPlain{*md.LiteralData}, nil
 }
 
-func (d *OpenPgPDecrypter) CanDecrypt(reader *io.Reader) bool {
-	readBytes, err := ioutil.ReadAll(*reader)
+func (d *OpenPgPDecrypter) CanDecrypt(reader io.Reader) (bool, io.Reader) {
+	readBytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		*reader = bytes.NewReader(readBytes)
-	}()
+	readerToReturn := bytes.NewReader(readBytes)
 	readerToTest := bytes.NewReader(readBytes)
 	_, err = armor.Decode(readerToTest)
 	if err != nil {
-		return false
+		return false, readerToReturn
 	}
-	return true
+	return true, readerToReturn
 }
 
 func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {
