@@ -16,6 +16,7 @@ type Plain interface {
 
 type Decrypter interface {
 	Decrypt(io.Reader) (Plain, error)
+	CanDecrypt(*io.Reader) bool
 }
 
 type NoOpPlain struct {
@@ -40,4 +41,8 @@ type NoOpDecrypter struct{}
 
 func (this *NoOpDecrypter) Decrypt(message io.Reader) (Plain, error) {
 	return &NoOpPlain{body: message, isBinary: false, fileName: ""}, nil
+}
+
+func (this *NoOpDecrypter) CanDecrypt(message *io.Reader) bool {
+	return true
 }

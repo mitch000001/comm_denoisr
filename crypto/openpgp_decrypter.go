@@ -1,12 +1,14 @@
 package crypto
 
 import (
+	"bytes"
 	"code.google.com/p/go.crypto/openpgp"
 	"code.google.com/p/go.crypto/openpgp/armor"
 	"code.google.com/p/go.crypto/openpgp/errors"
 	"code.google.com/p/go.crypto/openpgp/packet"
 	"fmt"
 	"io"
+	"io/ioutil"
 )
 
 // This wraps packet.LiteralData from the openpgp packet
@@ -56,6 +58,22 @@ func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (plain Plain, err error) {
 		return nil, err
 	}
 	return &OpenPgpPlain{*md.LiteralData}, nil
+}
+
+func (d *OpenPgPDecrypter) CanDecrypt(reader *io.Reader) bool {
+	readBytes, err := ioutil.ReadAll(*reader)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		*reader = bytes.NewReader(readBytes)
+	}()
+	readerToTest := bytes.NewReader(readBytes)
+	_, err = armor.Decode(readerToTest)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {
