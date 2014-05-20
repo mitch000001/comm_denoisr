@@ -41,3 +41,8 @@ type Decrypter interface {
 	// input reader
 	CanDecrypt(io.Reader) (bool, io.Reader)
 }
+
+type Signer interface {
+	// Signs the message and returns the signature
+	Sign(message io.Reader) (io.Reader, error)
+}
