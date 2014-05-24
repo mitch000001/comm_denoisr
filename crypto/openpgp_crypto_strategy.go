@@ -17,10 +17,10 @@ type OpenPgpCryptoStrategy struct {
 	OpenPgPDecrypter
 }
 
-func NewOpenPgpCryptoStrategy(keyring openpgp.EntityList, promptFunction openpgp.PromptFunction) CryptoStrategy {
-	e := OpenPgPEncrypter{keyring}
+func NewOpenPgpCryptoStrategy(publicKeyring openpgp.EntityList, privateKeyring openpgp.EntityList, promptFunction openpgp.PromptFunction) CryptoStrategy {
+	e := OpenPgPEncrypter{publicKeyring}
 	d := OpenPgPDecrypter{}
-	d.privateKeyRing = keyring
+	d.privateKeyring = privateKeyring
 	d.alreadyPromptedKeys = make(map[[20]byte]struct{})
 	if promptFunction != nil {
 		d.promptFunction = promptFunction
@@ -37,11 +37,11 @@ func (e KeyNotFoundError) Error() string {
 }
 
 type OpenPgPEncrypter struct {
-	pubKeyRing openpgp.EntityList
+	publicKeyring openpgp.EntityList
 }
 
-func NewOpenPgPEncrypter(pubKeyRing openpgp.EntityList) Encrypter {
-	return &OpenPgPEncrypter{pubKeyRing: pubKeyRing}
+func NewOpenPgPEncrypter(publicKeyring openpgp.EntityList) Encrypter {
+	return &OpenPgPEncrypter{publicKeyring: publicKeyring}
 }
 
 func (e *OpenPgPEncrypter) Encrypt(reader io.Reader, password string) (string, error) {
@@ -112,7 +112,7 @@ func encrypt(reader io.Reader, encryptor encryptFunction) (string, error) {
 func (e *OpenPgPEncrypter) recipients(to []string) ([]*openpgp.Entity, error) {
 	recipients := make([]*openpgp.Entity, 0)
 	for _, email := range to {
-		entity := getEntityForEmail(e.pubKeyRing, email)
+		entity := getEntityForEmail(e.publicKeyring, email)
 		if entity == nil {
 			return nil, KeyNotFoundError(email)
 		}
@@ -152,15 +152,15 @@ func (p *OpenPgpPlain) FileName() string {
 }
 
 type OpenPgPDecrypter struct {
-	privateKeyRing openpgp.EntityList
+	privateKeyring openpgp.EntityList
 	// TODO: move alreadyPromptedKeys into #Decrypt
 	alreadyPromptedKeys map[[20]byte]struct{}
 	promptFunction      openpgp.PromptFunction
 }
 
-func NewOpenPgPDecrypter(privateKeyRing openpgp.EntityList, promptFunction openpgp.PromptFunction) Decrypter {
+func NewOpenPgPDecrypter(privateKeyring openpgp.EntityList, promptFunction openpgp.PromptFunction) Decrypter {
 	d := &OpenPgPDecrypter{}
-	d.privateKeyRing = privateKeyRing
+	d.privateKeyring = privateKeyring
 	d.alreadyPromptedKeys = make(map[[20]byte]struct{})
 	if promptFunction != nil {
 		d.promptFunction = promptFunction
@@ -175,7 +175,7 @@ func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (plain Plain, err error) {
 	if err != nil {
 		return nil, err
 	}
-	md, err := openpgp.ReadMessage(pgpBlock.Body, d.privateKeyRing, d.promptFunction, nil)
+	md, err := openpgp.ReadMessage(pgpBlock.Body, d.privateKeyring, d.promptFunction, nil)
 	if err != nil {
 		return nil, err
 	}

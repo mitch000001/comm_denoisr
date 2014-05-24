@@ -22,44 +22,44 @@ func init() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "input, i", Usage: "Set filename here"},
 	}
-	decryptCommand := cli.Command{
-		Name:        "decrypt",
-		ShortName:   "d",
-		Usage:       "decrypt encrypted_file.txt",
-		Description: "Decrypt files provided",
-		Flags: []cli.Flag{
-			cli.StringFlag{Name: "output, o", Usage: "--output filename"},
-		},
-		Action: decrypt,
-	}
-	encryptCommand := cli.Command{
-		Name:        "encrypt",
-		ShortName:   "e",
-		Usage:       "encrypt plaintext_file.txt",
-		Description: "Encrypt files provided",
-		Flags: []cli.Flag{
-			cli.StringFlag{Name: "output, o", Usage: "--output filename"},
-			cli.BoolFlag{Name: "hidden-recipient, R", Usage: "--hidden-recipient"},
-		},
-		Action: encrypt,
-	}
 	app.Commands = []cli.Command{
-		decryptCommand,
-		encryptCommand,
+		cli.Command{
+			Name:        "decrypt",
+			ShortName:   "d",
+			Usage:       "decrypt encrypted_file.txt",
+			Description: "Decrypt files provided",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "output, o", Usage: "--output filename"},
+			},
+			Action: decrypt,
+		},
+		cli.Command{
+			Name:        "encrypt",
+			ShortName:   "e",
+			Usage:       "encrypt plaintext_file.txt",
+			Description: "Encrypt files provided",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "output, o", Usage: "--output filename"},
+				cli.BoolFlag{Name: "hidden-recipient, R", Usage: "--hidden-recipient"},
+			},
+			Action: encrypt,
+		},
+		},
 	}
 }
 
-var GnupgPublicKeyring string = os.Getenv("HOME") + "/.gnupg/secring.gpg"
+var GnupgPrivateKeyring string = os.Getenv("HOME") + "/.gnupg/secring.gpg"
+var GnupgPublicKeyring string = os.Getenv("HOME") + "/.gnupg/pubring.gpg"
 
 func main() {
-	fmt.Printf("Please enter the path to your private keyring [%v]: ", GnupgPublicKeyring)
-	var keyring string
-	fmt.Scanln(&keyring)
-	if keyring == "" {
-		keyring = GnupgPublicKeyring
+	fmt.Printf("Please enter the path to your private keyring [%v]: ", GnupgPrivateKeyring)
+	var privateKeyring string
+	fmt.Scanln(&privateKeyring)
+	if privateKeyring == "" {
+		privateKeyring = GnupgPrivateKeyring
 	}
-	fmt.Printf("Using '%v' as keyring file\n", keyring)
-	privringFile, err := os.Open(keyring)
+	fmt.Printf("Using '%v' as privateKeyring file\n", privateKeyring)
+	privringFile, err := os.Open(privateKeyring)
 	defer privringFile.Close()
 	check(err)
 	privring, err := openpgp.ReadKeyRing(privringFile)
@@ -67,7 +67,22 @@ func main() {
 		privring, err = openpgp.ReadArmoredKeyRing(privringFile)
 		check(err)
 	}
-	cryptoStrategy = crypto.NewOpenPgpCryptoStrategy(privring, nil)
+	fmt.Printf("Please enter the path to your public keyring [%v]: ", GnupgPublicKeyring)
+	var publicKeyring string
+	fmt.Scanln(&publicKeyring)
+	if publicKeyring == "" {
+		publicKeyring = GnupgPublicKeyring
+	}
+	fmt.Printf("Using '%v' as publicKeyring file\n", publicKeyring)
+	pubringFile, err := os.Open(publicKeyring)
+	defer pubringFile.Close()
+	check(err)
+	pubring, err := openpgp.ReadKeyRing(pubringFile)
+	if err != nil {
+		pubring, err = openpgp.ReadArmoredKeyRing(pubringFile)
+		check(err)
+	}
+	cryptoStrategy = crypto.NewOpenPgpCryptoStrategy(pubring, privring, nil)
 	app.Run(os.Args)
 }
 
