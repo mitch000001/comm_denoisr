@@ -1,5 +1,5 @@
 # Comm DE-noisr
-![Travis CI](https://travis-ci.org/mitch000001/comm_denoisr.svg?branch=master "Travis CI")
+<a href="https://travis-ci.org/mitch000001/comm_denoisr" target="_blank">![Travis CI](https://travis-ci.org/mitch000001/comm_denoisr.svg?branch=master "Travis CI")</a>
 
 Denoise your communications
 
