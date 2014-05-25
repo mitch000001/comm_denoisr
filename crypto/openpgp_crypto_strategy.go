@@ -187,7 +187,7 @@ func NewOpenPgPDecrypter(privateKeyring openpgp.EntityList, promptFunction openp
 }
 
 func (d *OpenPgPDecrypter) Decrypt(encrypted Encrypted) (plain Plain, err error) {
-	pgpBlock, err := armor.Decode(encrypted.Body())
+	pgpBlock, err := armor.Decode(encrypted.(*OpenPgpEncrypted).Body())
 	if err != nil {
 		return nil, err
 	}
