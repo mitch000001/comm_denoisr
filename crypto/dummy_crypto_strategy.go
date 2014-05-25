@@ -41,14 +41,24 @@ func (this *DummyPlain) FileName() string {
 	return ""
 }
 
+type DummyEncrypted struct{}
+
+func (this *DummyEncrypted) Body() io.Reader {
+	return nil
+}
+
 type DummyDecrypter struct{}
 
-func (this *DummyDecrypter) Decrypt(message io.Reader) (Plain, error) {
+func (this *DummyDecrypter) Decrypt(message DummyEncrypted) (Plain, error) {
 	return &DummyPlain{}, nil
 }
 
 func (this *DummyDecrypter) CanDecrypt(message io.Reader) (bool, io.Reader) {
 	return false, nil
+}
+
+func (this *DummyDecrypter) Read(message io.Reader) (Encrypted, error) {
+	return &DummyEncrypted{}, nil
 }
 
 type DummySigner struct{}

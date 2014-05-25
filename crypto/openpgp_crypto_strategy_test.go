@@ -53,7 +53,7 @@ func TestEncrypt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plain, err := decrypter.Decrypt(strings.NewReader(encryptedMessage))
+	plain, err := decrypter.Decrypt(&OpenPgpEncrypted{strings.NewReader(encryptedMessage)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestEncryptFor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plain, err := decrypter.Decrypt(strings.NewReader(encryptedMessage))
+	plain, err := decrypter.Decrypt(&OpenPgpEncrypted{strings.NewReader(encryptedMessage)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +181,7 @@ func TestDecrypt(t *testing.T) {
 		panic(err)
 	}
 	expectedMessage := string(decryptedBytes)
-	plain, err := decrypter.Decrypt(file)
+	plain, err := decrypter.Decrypt(&OpenPgpEncrypted{file})
 	if err != nil {
 		t.Fatal(err)
 	}

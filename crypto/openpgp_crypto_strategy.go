@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 )
 
+var OpenPgpUnsupportedEncryptionError error = errors.New("Encryption is not supported from OpenPgp module")
+
 type OpenPgpCryptoStrategy struct {
 	OpenPgPEncrypter
 	OpenPgPDecrypter
@@ -151,6 +153,14 @@ func (p *OpenPgpPlain) FileName() string {
 	return p.ld.FileName
 }
 
+type OpenPgpEncrypted struct {
+	body io.Reader
+}
+
+func (e *OpenPgpEncrypted) Body() io.Reader {
+	return e.body
+}
+
 type OpenPgPDecrypter struct {
 	privateKeyring openpgp.EntityList
 	// TODO: move alreadyPromptedKeys into #Decrypt
@@ -170,8 +180,8 @@ func NewOpenPgPDecrypter(privateKeyring openpgp.EntityList, promptFunction openp
 	return d
 }
 
-func (d *OpenPgPDecrypter) Decrypt(reader io.Reader) (plain Plain, err error) {
-	pgpBlock, err := armor.Decode(reader)
+func (d *OpenPgPDecrypter) Decrypt(encrypted Encrypted) (plain Plain, err error) {
+	pgpBlock, err := armor.Decode(encrypted.Body())
 	if err != nil {
 		return nil, err
 	}
@@ -194,6 +204,13 @@ func (d *OpenPgPDecrypter) CanDecrypt(reader io.Reader) (bool, io.Reader) {
 		return false, readerToReturn
 	}
 	return true, readerToReturn
+}
+
+func (d *OpenPgPDecrypter) Read(reader io.Reader) (Encrypted, error) {
+	if ok, r := d.CanDecrypt(reader); ok {
+		return &OpenPgpEncrypted{body: r}, nil
+	}
+	return nil, OpenPgpUnsupportedEncryptionError
 }
 
 func getBashPromptForPassword(d *OpenPgPDecrypter) openpgp.PromptFunction {

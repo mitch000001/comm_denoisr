@@ -9,6 +9,10 @@ type CryptoStrategy interface {
 	Decrypter
 }
 
+type Encrypted interface {
+	Body() io.Reader
+}
+
 type Encrypter interface {
 	// Encrypt the given message with the provided password
 	// Returns the encrypted message or an error
@@ -34,12 +38,15 @@ type Plain interface {
 type Decrypter interface {
 	// Decrypts the given reader and returns a Plain with the content
 	// and corresponding metadata
-	Decrypt(io.Reader) (Plain, error)
+	Decrypt(Encrypted) (Plain, error)
 	// Returns true if the provided reader is decryptable by the
 	// decrypter. Note that the reader will get consumed.
 	// Returns also a new reader with the contents read from the
 	// input reader
 	CanDecrypt(io.Reader) (bool, io.Reader)
+	// Reads the given Reader and returns an Encrypted to pass in #Decrypt
+	// An implementation should call #CanDecrypt before or within that function
+	Read(io.Reader) (Encrypted, error)
 }
 
 type Signer interface {
