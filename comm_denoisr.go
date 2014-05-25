@@ -93,11 +93,9 @@ func decrypt(c *cli.Context) {
 		file, err := os.Open(input)
 		defer file.Close()
 		check(err)
-		canDecrypt, reader := cryptoStrategy.CanDecrypt(file)
-		if !canDecrypt {
-			log.Fatalln("Can not decrypt encrypted data provided")
-		}
-		plain, err := cryptoStrategy.Decrypt(reader)
+		encrypted, err := cryptoStrategy.Read(file)
+		check(err)
+		plain, err := cryptoStrategy.Decrypt(encrypted)
 		check(err)
 		decryptedBytes, err := ioutil.ReadAll(plain.Body())
 		check(err)
