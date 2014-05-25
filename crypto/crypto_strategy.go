@@ -4,12 +4,17 @@ import (
 	"io"
 )
 
+type CryptoType string
+
 type CryptoStrategy interface {
 	Encrypter
 	Decrypter
 }
 
 type Encrypted interface {
+	// Returns the type of the encrypted data to use the right decrypter
+	Type() CryptoType
+	// Returns the actual encrypted content
 	Body() io.Reader
 }
 

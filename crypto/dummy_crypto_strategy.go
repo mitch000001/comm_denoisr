@@ -47,6 +47,10 @@ func (this *DummyEncrypted) Body() io.Reader {
 	return nil
 }
 
+func (this *DummyEncrypted) Type() CryptoType {
+	return CryptoType("")
+}
+
 type DummyDecrypter struct{}
 
 func (this *DummyDecrypter) Decrypt(message DummyEncrypted) (Plain, error) {
