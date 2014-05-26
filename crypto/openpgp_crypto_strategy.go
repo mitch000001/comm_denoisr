@@ -14,7 +14,7 @@ import (
 
 var OpenPgpUnsupportedEncryptionError error = errors.New("Encryption is not supported from OpenPgp module")
 
-const OpenPgpType CryptoType = "OpenPgpType"
+const openPgpType CryptoType = "OpenPgpType"
 
 type OpenPgpCryptoStrategy struct {
 	OpenPgPEncrypter
@@ -164,7 +164,7 @@ func (e *OpenPgpEncrypted) Body() io.Reader {
 }
 
 func (e *OpenPgpEncrypted) Type() CryptoType {
-	return OpenPgpType
+	return openPgpType
 }
 
 type OpenPgPDecrypter struct {
@@ -187,7 +187,7 @@ func NewOpenPgPDecrypter(privateKeyring openpgp.EntityList, promptFunction openp
 }
 
 func (d *OpenPgPDecrypter) Decrypt(encrypted Encrypted) (plain Plain, err error) {
-	if encrypted.Type() != OpenPgpType {
+	if encrypted.Type() != openPgpType {
 		return nil, OpenPgpUnsupportedEncryptionError
 	}
 	pgpBlock, err := armor.Decode(encrypted.Body())
