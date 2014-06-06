@@ -10,7 +10,7 @@ type DistributionChannel interface {
 }
 
 type Sender interface {
-	Send(io.Reader) (string, error)
+	Send([]io.Reader) (string, error)
 }
 
 type Receiver interface {
