@@ -51,6 +51,7 @@ type Decrypter interface {
 	CanDecrypt(io.Reader) (bool, io.Reader)
 	// Reads the given Reader and returns an Encrypted to pass in #Decrypt
 	// An implementation should call #CanDecrypt before or within that function
+	// The given reader can't be used after Read has run on it
 	Read(io.Reader) (Encrypted, error)
 }
 
