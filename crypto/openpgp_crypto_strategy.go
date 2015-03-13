@@ -7,10 +7,10 @@ import (
 	"io"
 	"io/ioutil"
 
-	"code.google.com/p/go.crypto/openpgp"
-	"code.google.com/p/go.crypto/openpgp/armor"
-	openpgpErrors "code.google.com/p/go.crypto/openpgp/errors"
-	"code.google.com/p/go.crypto/openpgp/packet"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+	openpgpErrors "golang.org/x/crypto/openpgp/errors"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 var OpenPgpUnsupportedEncryptionError error = errors.New("Encryption is not supported from OpenPgp module")
