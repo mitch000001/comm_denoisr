@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"code.google.com/p/go.crypto/openpgp"
 	"github.com/codegangsta/cli"
 	"github.com/mitch000001/comm_denoisr/crypto"
+	"golang.org/x/crypto/openpgp"
 )
 
 var configPath string = os.Getenv("HOME") + "/.comm_denoisr.conf"
